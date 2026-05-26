@@ -1,37 +1,39 @@
 (function execute(inputs, outputs) {
 
-    var sysIds = inputs.server_sys_id;
-
-    if (!sysIds) {
-        outputs.group_email = "";
-        outputs.email_body = "No stale servers found";
-        return;
-    }
+    var sysIds = inputs.server_sys_id.toString().split(',');
 
     var serverGr = new GlideRecord('cmdb_ci_server');
     serverGr.addQuery('sys_id', 'IN', sysIds);
     serverGr.query();
 
-    var body = "Hello Team,\n\nBelow servers are stale:\n\n";
+    outputs.group_email = '';
+    outputs.email_body = '';
 
     while (serverGr.next()) {
 
-        body += "Server Name : " + serverGr.getValue('name') + "\n";
-        body += "Updated On  : " + serverGr.getDisplayValue('sys_updated_on') + "\n\n";
+        var managedBy = serverGr.getValue('managed_by');
 
-        var userId = serverGr.getValue('managed_by');
-
-        if (userId) {
+        if (managedBy) {
 
             var userGr = new GlideRecord('sys_user');
 
-            if (userGr.get(userId)) {
+            if (userGr.get(managedBy)) {
 
                 outputs.group_email = userGr.getValue('email');
+
+                outputs.email_body =
+                    "Stale server found: " +
+                    serverGr.getValue('name');
+
+                break;
             }
         }
     }
 
-    outputs.email_body = body;
+    if (!outputs.group_email) {
+
+        outputs.group_email = "yourmail@gmail.com";
+        outputs.email_body = "No stale servers found";
+    }
 
 })(inputs, outputs);
