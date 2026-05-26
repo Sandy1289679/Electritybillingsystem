@@ -1,49 +1,42 @@
-# Electritybillingsystem
-
 (function execute(inputs, outputs) {
 
-    var groupedServers = {};
+    var sysIds = inputs.server_sys_ids;
 
-    var servers = inputs.server || [];
-
-    // Group servers by Managed By Group
-    for (var i = 0; i < servers.length; i++) {
-
-        var rec = servers[i];
-
-        var groupName = "No Group";
-
-        if (rec.managed_by && rec.managed_by.display_value) {
-            groupName = rec.managed_by.display_value;
-        }
-
-        // Create group array if not exists
-        if (!groupedServers[groupName]) {
-            groupedServers[groupName] = [];
-        }
-
-        // Add server name into that group
-        groupedServers[groupName].push(rec.name);
+    if (!sysIds) {
+        outputs.group_mapping_json = "{}";
+        return;
     }
 
-    // Final mail body
-    var finalBody = "";
+    var serverGr = new GlideRecord('cmdb_ci_server');
+    serverGr.addQuery('sys_id', 'IN', sysIds);
+    serverGr.query();
 
-    for (var group in groupedServers) {
+    var map = {};
 
-        finalBody += "Group : " + group + "\n";
+    while (serverGr.next()) {
 
-        finalBody += "Servers:\n";
+        var groupId = serverGr.getValue('managed_by');
 
-        for (var j = 0; j < groupedServers[group].length; j++) {
-
-            finalBody += "- " + groupedServers[group][j] + "\n";
+        if (!groupId) {
+            groupId = serverGr.getValue('assignment_group');
         }
 
-        finalBody += "\n----------------------\n\n";
+        if (!groupId) {
+            groupId = "UNASSIGNED";
+        }
+
+        var serverInfo = {
+            name: serverGr.getValue('name'),
+            updated: serverGr.getDisplayValue('sys_updated_on')
+        };
+
+        if (!map[groupId]) {
+            map[groupId] = [];
+        }
+
+        map[groupId].push(serverInfo);
     }
 
-    // Send output to notification
-    outputs.mailbody = finalBody;
+    outputs.group_mapping_json = JSON.stringify(map);
 
 })(inputs, outputs);
