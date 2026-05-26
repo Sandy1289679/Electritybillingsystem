@@ -1,42 +1,12 @@
-(function execute(inputs, outputs) {
+Hello Team,<br><br>
 
-    var sysIds = inputs.server_sys_ids;
+Below stale server was found:<br><br>
 
-    if (!sysIds) {
-        outputs.group_mapping_json = "{}";
-        return;
-    }
+Name: ${Name}<br>
+Serial Number: ${Serial Number}<br>
+Model Name: ${Model Name}<br>
+MAC Address: ${MAC Address}<br>
+Asset Tag: ${Asset Tag}<br>
 
-    var serverGr = new GlideRecord('cmdb_ci_server');
-    serverGr.addQuery('sys_id', 'IN', sysIds);
-    serverGr.query();
-
-    var map = {};
-
-    while (serverGr.next()) {
-
-        var groupId = serverGr.getValue('managed_by');
-
-        if (!groupId) {
-            groupId = serverGr.getValue('assignment_group');
-        }
-
-        if (!groupId) {
-            groupId = "UNASSIGNED";
-        }
-
-        var serverInfo = {
-            name: serverGr.getValue('name'),
-            updated: serverGr.getDisplayValue('sys_updated_on')
-        };
-
-        if (!map[groupId]) {
-            map[groupId] = [];
-        }
-
-        map[groupId].push(serverInfo);
-    }
-
-    outputs.group_mapping_json = JSON.stringify(map);
-
-})(inputs, outputs);
+<br>
+Please update CMDB record.
